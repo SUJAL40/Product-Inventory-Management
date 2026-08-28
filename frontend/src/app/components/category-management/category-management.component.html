@@ -1,0 +1,113 @@
+<div class="container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Category Management</h1>
+      <p class="page-subtitle">Organize and group your inventory items by type and domain</p>
+    </div>
+    <div class="header-actions">
+      <button (click)="openAddModal()" class="btn btn-primary">
+        <span>+</span> Add New Category
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="spinner"></div>
+
+  <!-- Category List Cards Grid -->
+  <div class="category-grid" *ngIf="!loading">
+    <div class="card category-card" *ngFor="let cat of categories">
+      <div class="cat-header">
+        <div class="cat-icon">🏷️</div>
+        <div class="cat-actions">
+          <button (click)="openEditModal(cat)" class="btn btn-outline btn-sm" title="Edit Category">✏️</button>
+          <button (click)="confirmDelete(cat)" class="btn btn-outline-danger btn-sm" title="Delete Category">🗑️</button>
+        </div>
+      </div>
+
+      <h3 class="cat-name">{{ cat.name }}</h3>
+      <p class="cat-desc">{{ cat.description || 'No description provided for this category.' }}</p>
+
+      <div class="cat-footer">
+        <span class="badge badge-neutral">{{ cat.productCount || 0 }} Products linked</span>
+        <a [routerLink]="['/products']" [queryParams]="{category: cat.id}" class="view-prods-link">
+          Browse items →
+        </a>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="categories.length === 0" class="card empty-state col-span-all">
+      <div class="empty-icon">🏷️</div>
+      <h3>No Categories Created Yet</h3>
+      <p>Group your products into categories like Oils, Spices, Woodcraft, etc.</p>
+      <button (click)="openAddModal()" class="btn btn-primary btn-sm mt-2">Create First Category</button>
+    </div>
+  </div>
+
+  <!-- Add/Edit Modal -->
+  <div class="modal-backdrop" *ngIf="isModalOpen" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">{{ editingCategory ? 'Edit Category' : 'Add New Category' }}</h3>
+        <button class="toast-close" (click)="closeModal()">×</button>
+      </div>
+      <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="catName">Category Name *</label>
+            <input 
+              type="text" 
+              id="catName" 
+              class="form-control" 
+              formControlName="name" 
+              placeholder="e.g. Cold Pressed Oils"
+            />
+            <div class="form-error" *ngIf="categoryForm.get('name')?.touched && categoryForm.get('name')?.invalid">
+              Category name must be between 2 and 100 characters.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="catDesc">Description</label>
+            <textarea 
+              id="catDesc" 
+              class="form-control" 
+              rows="3" 
+              formControlName="description" 
+              placeholder="Brief description of the items under this category..."
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" (click)="closeModal()" class="btn btn-secondary" [disabled]="submitting">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="submitting">
+            {{ submitting ? 'Saving...' : (editingCategory ? 'Update' : 'Create Category') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div class="modal-backdrop" *ngIf="categoryToDelete" (click)="cancelDelete()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Delete Category</h3>
+        <button class="toast-close" (click)="cancelDelete()">×</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete category <strong>"{{ categoryToDelete.name }}"</strong>?</p>
+        <p class="text-danger mt-2" *ngIf="(categoryToDelete.productCount || 0) > 0">
+          ⚠️ Warning: This category currently has {{ categoryToDelete.productCount }} linked product(s). You must reassign or remove those products before this category can be deleted.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button (click)="cancelDelete()" class="btn btn-secondary" [disabled]="deleting">Cancel</button>
+        <button (click)="deleteCategory()" class="btn btn-danger" [disabled]="deleting || (categoryToDelete.productCount || 0) > 0">
+          {{ deleting ? 'Deleting...' : 'Delete Category' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

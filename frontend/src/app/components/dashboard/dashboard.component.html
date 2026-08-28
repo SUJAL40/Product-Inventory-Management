@@ -1,0 +1,201 @@
+<div class="container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Inventory Overview</h1>
+      <p class="page-subtitle">Real-time statistics for Lakadi Ghana store and inventory</p>
+    </div>
+    <div class="header-actions">
+      <button (click)="loadData()" class="btn btn-secondary btn-sm" [disabled]="loading">
+        <span>🔄</span> Refresh
+      </button>
+      <a routerLink="/products/new" class="btn btn-primary btn-sm">
+        <span>+</span> Add New Product
+      </a>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading inventory metrics...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-banner">
+    <div class="error-icon">⚠️</div>
+    <div>
+      <h3>Backend Disconnected</h3>
+      <p>{{ error }}</p>
+      <button (click)="loadData()" class="btn btn-secondary btn-sm mt-2">Retry Connection</button>
+    </div>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div *ngIf="!loading && !error && stats">
+    <!-- Quick Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon-wrapper primary">
+          <span class="stat-icon">📦</span>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Total Products</span>
+          <span class="stat-value">{{ stats.totalProducts }}</span>
+          <span class="stat-subtext">Across {{ stats.totalCategories }} categories</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrapper success">
+          <span class="stat-icon">💰</span>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Total Stock Value</span>
+          <span class="stat-value">₹{{ stats.totalInventoryValue | number:'1.2-2' }}</span>
+          <span class="stat-subtext">Estimated wholesale retail</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrapper warning">
+          <span class="stat-icon">⚠️</span>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Low Stock Alerts</span>
+          <span class="stat-value">{{ stats.lowStockCount }}</span>
+          <span class="stat-subtext">Below threshold limit</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrapper danger">
+          <span class="stat-icon">🚫</span>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Out of Stock</span>
+          <span class="stat-value">{{ stats.outOfStockCount }}</span>
+          <span class="stat-subtext">Immediate reorder required</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondary Grid: Category Breakdown & Low Stock Warnings -->
+    <div class="dashboard-grid mt-4">
+      <!-- Category Distribution -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Category Breakdown</h2>
+          <a routerLink="/categories" class="view-all-link">Manage Categories →</a>
+        </div>
+        <div class="category-list">
+          <div *ngFor="let cat of getCategoryEntries()" class="category-item">
+            <div class="category-info">
+              <span class="category-name">{{ cat.name }}</span>
+              <span class="category-count">{{ cat.count }} items ({{ getCategoryPercentage(cat.count) }}%)</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" [style.width.%]="getCategoryPercentage(cat.count)"></div>
+            </div>
+          </div>
+          <div *ngIf="getCategoryEntries().length === 0" class="empty-state">
+            <p>No categories found</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Low Stock Alerts List -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Stock Alerts</h2>
+          <span class="badge badge-warning" *ngIf="lowStockProducts.length > 0">
+            {{ lowStockProducts.length }} Need Attention
+          </span>
+        </div>
+        <div class="stock-alerts-list" *ngIf="lowStockProducts.length > 0; else allGood">
+          <div *ngFor="let prod of lowStockProducts" class="stock-alert-item">
+            <div class="alert-product-info">
+              <span class="product-name">{{ prod.name }}</span>
+              <span class="product-sku">SKU: {{ prod.sku }}</span>
+            </div>
+            <div class="alert-status">
+              <span [ngClass]="prod.quantity === 0 ? 'badge badge-danger' : 'badge badge-warning'">
+                {{ prod.quantity === 0 ? 'Out of Stock' : prod.quantity + ' left' }}
+              </span>
+              <a [routerLink]="['/products/edit', prod.id]" class="btn btn-secondary btn-sm">Restock</a>
+            </div>
+          </div>
+        </div>
+        <ng-template #allGood>
+          <div class="empty-state">
+            <div class="empty-icon">✅</div>
+            <p>All products have healthy inventory levels!</p>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- Recent Products Table -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h2 class="card-title">Recent Inventory Products</h2>
+        <a routerLink="/products" class="view-all-link">View All Products →</a>
+      </div>
+
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>SKU</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let prod of recentProducts">
+              <td>
+                <div class="product-cell">
+                  <div class="product-thumbnail">
+                    <img *ngIf="prod.imageUrl" [src]="prod.imageUrl" [alt]="prod.name" (error)="prod.imageUrl=''" />
+                    <span *ngIf="!prod.imageUrl">📦</span>
+                  </div>
+                  <div>
+                    <a [routerLink]="['/products', prod.id]" class="cell-title">{{ prod.name }}</a>
+                  </div>
+                </div>
+              </td>
+              <td><code>{{ prod.sku }}</code></td>
+              <td><span class="badge badge-neutral">{{ prod.categoryName || 'Uncategorized' }}</span></td>
+              <td><strong>₹{{ prod.price | number:'1.2-2' }}</strong></td>
+              <td>{{ prod.quantity }}</td>
+              <td>
+                <span [ngClass]="{
+                  'badge badge-success': prod.stockStatus === 'IN_STOCK',
+                  'badge badge-warning': prod.stockStatus === 'LOW_STOCK',
+                  'badge badge-danger': prod.stockStatus === 'OUT_OF_STOCK'
+                }">
+                  {{ prod.stockStatus === 'IN_STOCK' ? 'In Stock' : prod.stockStatus === 'LOW_STOCK' ? 'Low Stock' : 'Out of Stock' }}
+                </span>
+              </td>
+              <td>
+                <div class="table-actions">
+                  <a [routerLink]="['/products', prod.id]" class="btn btn-outline btn-sm">View</a>
+                  <a [routerLink]="['/products/edit', prod.id]" class="btn btn-secondary btn-sm">Edit</a>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="recentProducts.length === 0">
+              <td colspan="7" class="empty-state">
+                <p>No products found. Add your first product!</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

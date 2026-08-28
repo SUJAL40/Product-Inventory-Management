@@ -1,0 +1,156 @@
+<div class="container detail-container">
+  <div *ngIf="loading" class="spinner"></div>
+
+  <div *ngIf="!loading && product">
+    <!-- Breadcrumb & Actions Header -->
+    <div class="page-header">
+      <div>
+        <div class="breadcrumbs">
+          <a routerLink="/products">Products</a>
+          <span>/</span>
+          <span class="current">{{ product.name }}</span>
+        </div>
+        <h1 class="page-title mt-1">{{ product.name }}</h1>
+      </div>
+      <div class="header-actions">
+        <a [routerLink]="['/products/edit', product.id]" class="btn btn-secondary">
+          ✏️ Edit Details
+        </a>
+        <button (click)="showDeleteModal = true" class="btn btn-outline-danger">
+          🗑️ Delete
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="detail-grid">
+      <!-- Left Column: Image & Media -->
+      <div class="detail-image-card card">
+        <div class="image-wrapper">
+          <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" (error)="product.imageUrl=''" />
+          <div *ngIf="!product.imageUrl" class="no-image-placeholder">
+            <span>📦</span>
+            <p>No image uploaded</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Info & Restock Actions -->
+      <div class="detail-info-column">
+        <!-- Status & Pricing Card -->
+        <div class="card info-card">
+          <div class="status-header">
+            <span [ngClass]="{
+              'badge badge-success': product.stockStatus === 'IN_STOCK',
+              'badge badge-warning': product.stockStatus === 'LOW_STOCK',
+              'badge badge-danger': product.stockStatus === 'OUT_OF_STOCK'
+            }">
+              {{ product.stockStatus === 'IN_STOCK' ? 'In Stock' : product.stockStatus === 'LOW_STOCK' ? 'Low Stock' : 'Out of Stock' }}
+            </span>
+            <span class="sku-badge">SKU: {{ product.sku }}</span>
+          </div>
+
+          <div class="price-display">
+            <span class="price-amount">₹{{ product.price | number:'1.2-2' }}</span>
+            <span class="price-unit">per unit</span>
+          </div>
+
+          <!-- Quick Inventory Controls -->
+          <div class="stock-manager-box">
+            <h4 class="box-title">Inventory Controls</h4>
+            <div class="stock-summary">
+              <div class="summary-stat">
+                <span class="stat-num">{{ product.quantity }}</span>
+                <span class="stat-desc">Units in Warehouse</span>
+              </div>
+              <div class="summary-stat">
+                <span class="stat-num">{{ product.minStockLevel }}</span>
+                <span class="stat-desc">Min Alert Level</span>
+              </div>
+            </div>
+
+            <div class="stock-adjust-bar">
+              <input 
+                type="number" 
+                class="form-control qty-input" 
+                [(ngModel)]="stockAdjustmentAmount" 
+                min="1" 
+                max="1000"
+              />
+              <button 
+                class="btn btn-secondary btn-sm" 
+                [disabled]="adjusting || product.quantity < stockAdjustmentAmount"
+                (click)="adjustStock(-stockAdjustmentAmount)"
+              >
+                - Reduce Stock
+              </button>
+              <button 
+                class="btn btn-primary btn-sm" 
+                [disabled]="adjusting"
+                (click)="adjustStock(stockAdjustmentAmount)"
+              >
+                + Add Stock
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Specifications Card -->
+        <div class="card meta-card mt-3">
+          <h3 class="card-title">Specifications</h3>
+          
+          <div class="spec-list">
+            <div class="spec-row">
+              <span class="spec-label">Category</span>
+              <span class="spec-value">
+                <a [routerLink]="['/products']" [queryParams]="{category: product.categoryId}" class="category-link">
+                  {{ product.categoryName || 'General' }}
+                </a>
+              </span>
+            </div>
+
+            <div class="spec-row">
+              <span class="spec-label">SKU Code</span>
+              <span class="spec-value"><code>{{ product.sku }}</code></span>
+            </div>
+
+            <div class="spec-row" *ngIf="product.createdAt">
+              <span class="spec-label">Date Added</span>
+              <span class="spec-value">{{ product.createdAt | date:'mediumDate' }}</span>
+            </div>
+
+            <div class="spec-row" *ngIf="product.updatedAt">
+              <span class="spec-label">Last Updated</span>
+              <span class="spec-value">{{ product.updatedAt | date:'medium' }}</span>
+            </div>
+          </div>
+
+          <div class="description-section" *ngIf="product.description">
+            <h4 class="spec-label">Description</h4>
+            <p class="description-text">{{ product.description }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div class="modal-backdrop" *ngIf="showDeleteModal" (click)="showDeleteModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Delete Product</h3>
+        <button class="toast-close" (click)="showDeleteModal = false">×</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong>"{{ product?.name }}"</strong>?</p>
+        <p class="text-muted mt-2">This action is irreversible and removes the product permanently from records.</p>
+      </div>
+      <div class="modal-footer">
+        <button (click)="showDeleteModal = false" class="btn btn-secondary" [disabled]="deleting">Cancel</button>
+        <button (click)="deleteProduct()" class="btn btn-danger" [disabled]="deleting">
+          {{ deleting ? 'Deleting...' : 'Confirm Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

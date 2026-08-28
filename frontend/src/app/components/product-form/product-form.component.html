@@ -1,0 +1,167 @@
+<div class="container form-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{{ isEditMode ? 'Edit Product' : 'Add New Product' }}</h1>
+      <p class="page-subtitle">{{ isEditMode ? 'Update inventory details and stock specifications' : 'Register a new item into the inventory system' }}</p>
+    </div>
+    <div class="header-actions">
+      <a [routerLink]="isEditMode ? ['/products', productId] : '/products'" class="btn btn-secondary btn-sm">
+        ← Back to Catalog
+      </a>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="spinner"></div>
+
+  <div class="card form-card" *ngIf="!loading">
+    <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
+      <!-- General Information -->
+      <div class="form-section">
+        <h3 class="section-title">General Information</h3>
+
+        <div class="form-group">
+          <label class="form-label" for="name">Product Name *</label>
+          <input 
+            type="text" 
+            id="name" 
+            class="form-control" 
+            formControlName="name" 
+            placeholder="e.g. Cold Pressed Groundnut Oil (1 Litre)"
+          />
+          <div class="form-error" *ngIf="productForm.get('name')?.touched && productForm.get('name')?.invalid">
+            <span *ngIf="productForm.get('name')?.errors?.['required']">Product name is required.</span>
+            <span *ngIf="productForm.get('name')?.errors?.['minlength']">Name must be at least 2 characters.</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <div class="sku-header">
+              <label class="form-label" for="sku">SKU Code *</label>
+              <button type="button" class="sku-gen-btn" (click)="generateSku()">Auto-Generate SKU</button>
+            </div>
+            <input 
+              type="text" 
+              id="sku" 
+              class="form-control text-uppercase" 
+              formControlName="sku" 
+              placeholder="e.g. OIL-GND-1L"
+            />
+            <div class="form-error" *ngIf="productForm.get('sku')?.touched && productForm.get('sku')?.invalid">
+              <span *ngIf="productForm.get('sku')?.errors?.['required']">SKU code is required.</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="categoryId">Category *</label>
+            <select id="categoryId" class="form-select" formControlName="categoryId">
+              <option value="" disabled>Select a category</option>
+              <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+            </select>
+            <div class="form-error" *ngIf="productForm.get('categoryId')?.touched && productForm.get('categoryId')?.invalid">
+              Category selection is required.
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="description">Description</label>
+          <textarea 
+            id="description" 
+            class="form-control" 
+            rows="3" 
+            formControlName="description" 
+            placeholder="Detailed notes on item purity, extraction process, ingredients, etc."
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Pricing & Stock Inventory -->
+      <div class="form-section">
+        <h3 class="section-title">Pricing & Stock Management</h3>
+
+        <div class="form-row form-row-3">
+          <div class="form-group">
+            <label class="form-label" for="price">Price (₹) *</label>
+            <input 
+              type="number" 
+              id="price" 
+              class="form-control" 
+              step="0.01" 
+              min="0.01" 
+              formControlName="price" 
+              placeholder="0.00"
+            />
+            <div class="form-error" *ngIf="productForm.get('price')?.touched && productForm.get('price')?.invalid">
+              Valid price greater than zero is required.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="quantity">Initial Quantity in Stock *</label>
+            <input 
+              type="number" 
+              id="quantity" 
+              class="form-control" 
+              min="0" 
+              formControlName="quantity" 
+              placeholder="0"
+            />
+            <div class="form-error" *ngIf="productForm.get('quantity')?.touched && productForm.get('quantity')?.invalid">
+              Quantity cannot be negative.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="minStockLevel">Low Stock Alert Threshold *</label>
+            <input 
+              type="number" 
+              id="minStockLevel" 
+              class="form-control" 
+              min="0" 
+              formControlName="minStockLevel" 
+              placeholder="5"
+            />
+            <div class="form-error" *ngIf="productForm.get('minStockLevel')?.touched && productForm.get('minStockLevel')?.invalid">
+              Threshold cannot be negative.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Media Assets -->
+      <div class="form-section">
+        <h3 class="section-title">Product Image</h3>
+        <div class="form-group">
+          <label class="form-label" for="imageUrl">Image URL (Optional)</label>
+          <input 
+            type="url" 
+            id="imageUrl" 
+            class="form-control" 
+            formControlName="imageUrl" 
+            placeholder="https://example.com/images/product.jpg"
+          />
+          <span class="helper-text">Direct image URL for product photo / thumbnail preview.</span>
+        </div>
+
+        <div class="image-preview-container" *ngIf="productForm.get('imageUrl')?.value">
+          <span class="preview-label">Image Preview:</span>
+          <div class="image-preview">
+            <img [src]="productForm.get('imageUrl')?.value" alt="Preview" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Actions -->
+      <div class="form-actions">
+        <a [routerLink]="isEditMode ? ['/products', productId] : '/products'" class="btn btn-secondary">
+          Cancel
+        </a>
+        <button type="submit" class="btn btn-primary btn-lg" [disabled]="submitting">
+          {{ submitting ? 'Saving...' : (isEditMode ? 'Update Product' : 'Create Product') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

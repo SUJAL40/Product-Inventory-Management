@@ -1,0 +1,229 @@
+<div class="container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Product Inventory</h1>
+      <p class="page-subtitle">Manage, search, restock, and edit items in the catalog</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/products/new" class="btn btn-primary">
+        <span>+</span> Add Product
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter & Search Bar -->
+  <div class="card filter-card">
+    <div class="filter-grid">
+      <!-- Search Input -->
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text" 
+          class="form-control" 
+          placeholder="Search by name, SKU, or description..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearchChange()"
+        />
+      </div>
+
+      <!-- Category Filter -->
+      <div class="filter-item">
+        <select class="form-select" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
+          <option [ngValue]="null">All Categories</option>
+          <option *ngFor="let cat of categories" [ngValue]="cat.id">{{ cat.name }}</option>
+        </select>
+      </div>
+
+      <!-- Stock Status Filter -->
+      <div class="filter-item">
+        <select class="form-select" [(ngModel)]="selectedStatus">
+          <option value="ALL">All Stock Levels</option>
+          <option value="IN_STOCK">In Stock Only</option>
+          <option value="LOW_STOCK">Low Stock Only</option>
+          <option value="OUT_OF_STOCK">Out of Stock Only</option>
+        </select>
+      </div>
+
+      <!-- Sort By -->
+      <div class="filter-item">
+        <select class="form-select" [(ngModel)]="sortBy">
+          <option value="name">Sort by Name</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="quantity-desc">Stock: High to Low</option>
+          <option value="quantity-asc">Stock: Low to High</option>
+        </select>
+      </div>
+
+      <!-- View Switcher -->
+      <div class="view-switcher">
+        <button 
+          class="switch-btn" 
+          [class.active]="viewMode === 'table'" 
+          (click)="viewMode = 'table'"
+          title="Table View"
+        >📋</button>
+        <button 
+          class="switch-btn" 
+          [class.active]="viewMode === 'grid'" 
+          (click)="viewMode = 'grid'"
+          title="Grid View"
+        >🔲</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="spinner"></div>
+
+  <!-- Results Count -->
+  <div class="results-info" *ngIf="!loading">
+    <span>Showing <strong>{{ filteredProducts.length }}</strong> products</span>
+  </div>
+
+  <!-- Empty State -->
+  <div class="card empty-state" *ngIf="!loading && filteredProducts.length === 0">
+    <div class="empty-icon">📦</div>
+    <h3>No Products Found</h3>
+    <p>No products matched your search or filters.</p>
+    <button (click)="searchTerm=''; selectedCategoryId=null; selectedStatus='ALL'; loadProducts()" class="btn btn-secondary btn-sm mt-2">
+      Reset Filters
+    </button>
+  </div>
+
+  <!-- Table View -->
+  <div class="card table-card" *ngIf="!loading && filteredProducts.length > 0 && viewMode === 'table'">
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>SKU</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock Level</th>
+            <th>Status</th>
+            <th>Quick Restock</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let prod of filteredProducts">
+            <td>
+              <div class="product-cell">
+                <div class="product-thumbnail">
+                  <img *ngIf="prod.imageUrl" [src]="prod.imageUrl" [alt]="prod.name" (error)="prod.imageUrl=''" />
+                  <span *ngIf="!prod.imageUrl">📦</span>
+                </div>
+                <div>
+                  <a [routerLink]="['/products', prod.id]" class="product-name-link">{{ prod.name }}</a>
+                  <p class="product-desc-snippet">{{ prod.description | slice:0:50 }}{{ prod.description && prod.description.length > 50 ? '...' : '' }}</p>
+                </div>
+              </div>
+            </td>
+            <td><code>{{ prod.sku }}</code></td>
+            <td><span class="badge badge-neutral">{{ prod.categoryName || 'General' }}</span></td>
+            <td><strong>₹{{ prod.price | number:'1.2-2' }}</strong></td>
+            <td>
+              <span class="stock-qty-text">{{ prod.quantity }}</span>
+              <span class="min-threshold-text">(min {{ prod.minStockLevel }})</span>
+            </td>
+            <td>
+              <span [ngClass]="{
+                'badge badge-success': prod.stockStatus === 'IN_STOCK',
+                'badge badge-warning': prod.stockStatus === 'LOW_STOCK',
+                'badge badge-danger': prod.stockStatus === 'OUT_OF_STOCK'
+              }">
+                {{ prod.stockStatus === 'IN_STOCK' ? 'In Stock' : prod.stockStatus === 'LOW_STOCK' ? 'Low Stock' : 'Out of Stock' }}
+              </span>
+            </td>
+            <td>
+              <div class="quick-stock-controls">
+                <button 
+                  class="stock-btn" 
+                  [disabled]="prod.quantity <= 0" 
+                  (click)="adjustStock(prod, -1, $event)"
+                  title="Decrease Stock"
+                >-</button>
+                <span class="stock-display">{{ prod.quantity }}</span>
+                <button 
+                  class="stock-btn" 
+                  (click)="adjustStock(prod, 1, $event)"
+                  title="Increase Stock"
+                >+</button>
+              </div>
+            </td>
+            <td>
+              <div class="table-actions">
+                <a [routerLink]="['/products', prod.id]" class="btn btn-outline btn-sm" title="View details">👁</a>
+                <a [routerLink]="['/products/edit', prod.id]" class="btn btn-secondary btn-sm" title="Edit product">✏️</a>
+                <button (click)="confirmDelete(prod, $event)" class="btn btn-outline-danger btn-sm" title="Delete product">🗑️</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Grid View -->
+  <div class="product-grid" *ngIf="!loading && filteredProducts.length > 0 && viewMode === 'grid'">
+    <div class="product-card" *ngFor="let prod of filteredProducts">
+      <div class="product-card-image">
+        <img *ngIf="prod.imageUrl" [src]="prod.imageUrl" [alt]="prod.name" (error)="prod.imageUrl=''" />
+        <div *ngIf="!prod.imageUrl" class="image-placeholder">📦</div>
+        <span class="product-card-badge" [ngClass]="{
+          'badge badge-success': prod.stockStatus === 'IN_STOCK',
+          'badge badge-warning': prod.stockStatus === 'LOW_STOCK',
+          'badge badge-danger': prod.stockStatus === 'OUT_OF_STOCK'
+        }">
+          {{ prod.stockStatus === 'IN_STOCK' ? 'In Stock' : prod.stockStatus === 'LOW_STOCK' ? 'Low Stock' : 'Out of Stock' }}
+        </span>
+      </div>
+
+      <div class="product-card-body">
+        <div class="product-card-category">{{ prod.categoryName || 'General' }}</div>
+        <h3 class="product-card-title">
+          <a [routerLink]="['/products', prod.id]">{{ prod.name }}</a>
+        </h3>
+        <div class="product-card-sku">SKU: {{ prod.sku }}</div>
+
+        <div class="product-card-meta">
+          <span class="product-card-price">₹{{ prod.price | number:'1.2-2' }}</span>
+          <div class="quick-stock-controls">
+            <button class="stock-btn" [disabled]="prod.quantity <= 0" (click)="adjustStock(prod, -1, $event)">-</button>
+            <span class="stock-display">{{ prod.quantity }}</span>
+            <button class="stock-btn" (click)="adjustStock(prod, 1, $event)">+</button>
+          </div>
+        </div>
+
+        <div class="product-card-actions">
+          <a [routerLink]="['/products', prod.id]" class="btn btn-outline btn-sm">View</a>
+          <a [routerLink]="['/products/edit', prod.id]" class="btn btn-secondary btn-sm">Edit</a>
+          <button (click)="confirmDelete(prod, $event)" class="btn btn-outline-danger btn-sm">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-backdrop" *ngIf="productToDelete" (click)="cancelDelete()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Confirm Deletion</h3>
+        <button class="toast-close" (click)="cancelDelete()">×</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong>"{{ productToDelete.name }}"</strong> (SKU: {{ productToDelete.sku }})?</p>
+        <p class="text-muted mt-2">This action cannot be undone and will permanently remove this item from inventory.</p>
+      </div>
+      <div class="modal-footer">
+        <button (click)="cancelDelete()" class="btn btn-secondary" [disabled]="deleting">Cancel</button>
+        <button (click)="deleteProduct()" class="btn btn-danger" [disabled]="deleting">
+          {{ deleting ? 'Deleting...' : 'Delete Product' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
