@@ -1,0 +1,38 @@
+# Maven & Spring Boot
+backend/target/
+backend/*.jar
+backend/*.war
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/mvnw
+backend/mvnw.cmd
+
+# Node & Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.angular/cache/
+frontend/tmp/
+frontend/out-tsc/
+frontend/bazel-out/
+
+# IDE & Editor files
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs & Databases
+*.log
+*.sqlite
+backend/h2.db
+backend/inventorydb.mv.db
+backend/inventorydb.trace.db
+
+# Environment & Temp
+.env
+.env.local
+scratch/
