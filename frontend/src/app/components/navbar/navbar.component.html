@@ -1,0 +1,53 @@
+<header class="navbar-header">
+  <div class="navbar-container">
+    <div class="navbar-brand">
+      <a routerLink="/dashboard" (click)="closeMenu()" class="brand-link">
+        <div class="brand-logo">LG</div>
+        <div class="brand-text">
+          <span class="brand-title">Lakadi Ghana</span>
+          <span class="brand-subtitle">Inventory Management</span>
+        </div>
+      </a>
+    </div>
+
+    <button class="mobile-toggle" (click)="toggleMenu()" aria-label="Toggle navigation">
+      <span class="bar"></span>
+      <span class="bar"></span>
+      <span class="bar"></span>
+    </button>
+
+    <nav class="navbar-nav" [class.open]="isMenuOpen">
+      <a 
+        routerLink="/dashboard" 
+        routerLinkActive="active" 
+        [routerLinkActiveOptions]="{exact: true}"
+        (click)="closeMenu()" 
+        class="nav-link"
+      >
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+      <a 
+        routerLink="/products" 
+        routerLinkActive="active" 
+        (click)="closeMenu()" 
+        class="nav-link"
+      >
+        <span class="nav-icon">📦</span> Products
+      </a>
+      <a 
+        routerLink="/categories" 
+        routerLinkActive="active" 
+        (click)="closeMenu()" 
+        class="nav-link"
+      >
+        <span class="nav-icon">🏷️</span> Categories
+      </a>
+
+      <div class="nav-actions">
+        <a routerLink="/products/new" (click)="closeMenu()" class="btn btn-primary btn-sm">
+          <span>+</span> Add Product
+        </a>
+      </div>
+    </nav>
+  </div>
+</header>
