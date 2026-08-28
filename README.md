@@ -58,10 +58,10 @@ cd backend
 mvn spring-boot:run
 ```
 
-The backend server will start on: **`http://localhost:8080`**
+The backend server will start on: **`http://localhost:8081`**
 
-- **REST API Base URL**: `http://localhost:8080/api`
-- **H2 Database Web Console**: `http://localhost:8080/h2-console`
+- **REST API Base URL**: `http://localhost:8081/api`
+- **H2 Database Web Console**: `http://localhost:8081/h2-console`
   - **JDBC URL**: `jdbc:h2:mem:inventorydb`
   - **Username**: `sa`
   - **Password**: `password`

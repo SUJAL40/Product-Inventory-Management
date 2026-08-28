@@ -38,7 +38,7 @@ export class DashboardComponent implements OnInit {
         this.stats = data;
       },
       error: (err) => {
-        this.error = 'Failed to connect to backend server. Make sure Spring Boot is running on port 8080.';
+        this.error = 'Failed to connect to backend server. Make sure Spring Boot is running on port 8081.';
         this.notificationService.error('Error loading dashboard statistics');
         this.loading = false;
       }
